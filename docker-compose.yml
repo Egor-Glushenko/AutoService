@@ -1,0 +1,25 @@
+# PostgreSQL с базой данных «Автосервис» (КР №1).
+# Запуск:   docker compose up -d --wait
+# Остановка: docker compose down   (данные сохраняются в volume autoservice-data)
+services:
+  autoservice-db:
+    image: postgres:16-alpine
+    container_name: autoservice-db
+    environment:
+      POSTGRES_DB: ${AUTOSERVICE_DB:-autoservice}
+      POSTGRES_USER: ${AUTOSERVICE_DB_USER:-autoservice_app}
+      POSTGRES_PASSWORD: ${AUTOSERVICE_DB_PASSWORD:?set AUTOSERVICE_DB_PASSWORD in .env}
+    ports:
+      - "${AUTOSERVICE_DB_PORT:-55433}:5432"
+    volumes:
+      - autoservice-data:/var/lib/postgresql/data
+      # Скрипты выполняются один раз — при первом запуске на пустом volume.
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  autoservice-data:
